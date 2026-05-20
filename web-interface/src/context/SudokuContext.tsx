@@ -1,17 +1,12 @@
 import React, { createContext, useContext, useState } from 'react';
-import moment from 'moment';
 
 type SudokuContextProps = {
-  numberSelected: string,
-  setNumberSelected: React.Dispatch<React.SetStateAction<string>>,
   gameArray: string[],
   setGameArray: React.Dispatch<React.SetStateAction<string[]>>,
   difficulty: string,
   setDifficulty: React.Dispatch<React.SetStateAction<string>>,
-  timeGameStarted: moment.Moment,
-  setTimeGameStarted: React.Dispatch<React.SetStateAction<moment.Moment>>,
-  fastMode: boolean,
-  setFastMode: React.Dispatch<React.SetStateAction<boolean>>,
+  timeGameStarted: number,
+  setTimeGameStarted: React.Dispatch<React.SetStateAction<number>>,
   cellSelected: number,
   setCellSelected: React.Dispatch<React.SetStateAction<number>>,
   initArray: string[],
@@ -21,25 +16,21 @@ type SudokuContextProps = {
 };
 
 
-const SudokuContext = createContext<SudokuContextProps>({ numberSelected: '0', setNumberSelected: () => {},
-                                                          gameArray: [], setGameArray: () => {},
+const SudokuContext = createContext<SudokuContextProps>({ gameArray: [], setGameArray: () => {},
                                                           difficulty: 'Easy', setDifficulty: () => {},
-                                                          timeGameStarted: moment(), setTimeGameStarted: () => {},
-                                                          fastMode: false, setFastMode: () => {},
+                                                          timeGameStarted: Date.now(), setTimeGameStarted: () => {},
                                                           cellSelected: -1, setCellSelected: () => {},
                                                           initArray: [], setInitArray: () => {},
                                                           won: false, setWon: () => {} });
 
 type SudokuProviderProps = {
-  children: React.ReactElement
+  children: React.ReactNode
 };
 
 export const SudokuProvider = ({ children }: SudokuProviderProps) => {
-  let [ numberSelected, setNumberSelected ] = useState<string>('0');
   let [ gameArray, setGameArray ] = useState<string[]>([]);
   let [ difficulty,setDifficulty ] = useState<string>('Easy');
-  let [ timeGameStarted, setTimeGameStarted ] = useState<moment.Moment>(moment());
-  let [ fastMode, setFastMode ] = useState<boolean>(false);
+  let [ timeGameStarted, setTimeGameStarted ] = useState<number>(Date.now());
   let [ cellSelected, setCellSelected ] = useState<number>(-1);
   let [ initArray, setInitArray ] = useState<string[]>([]);
   let [ won, setWon ] = useState<boolean>(false);
@@ -47,11 +38,9 @@ export const SudokuProvider = ({ children }: SudokuProviderProps) => {
   return (
     <SudokuContext.Provider value={
       {
-        numberSelected, setNumberSelected,
         gameArray, setGameArray,
         difficulty,setDifficulty,
         timeGameStarted, setTimeGameStarted,
-        fastMode, setFastMode,
         cellSelected, setCellSelected,
         initArray, setInitArray,
         won, setWon
@@ -63,6 +52,3 @@ export const SudokuProvider = ({ children }: SudokuProviderProps) => {
 };
 
 export const useSudokuContext = (): SudokuContextProps => useContext(SudokuContext);
-
-// Usage
-// const { numberSelected, setNumberSelected } = useNumberValue();

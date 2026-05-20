@@ -1,8 +1,8 @@
-import React from 'react';
+import type { ChangeEvent } from 'react';
 import { useSudokuContext } from '../context/SudokuContext';
 
 type DifficultyProps = {
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  onChange: (e: ChangeEvent<HTMLSelectElement>) => void
 };
 
 /**

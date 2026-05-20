@@ -25,6 +25,14 @@
   padding: 0;
 }
 
+button {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+}
+
 /**
  * Declare default values here.
  */
@@ -40,7 +48,7 @@ body {
  * A container for the game.
  */
 .container {
-  max-width: 700px;
+  max-width: 760px;
   min-width: 270px;
   margin: 0 auto;
   padding: 0 10px;
@@ -74,7 +82,7 @@ body {
   color: var(--color-grey-light);
 }
 
-.header h2 {
+.header__new-game {
   float: right;
   font-size: 18px;
   font-weight: 400;
@@ -84,7 +92,8 @@ body {
   cursor: pointer;
 }
 
-.header h2:hover {
+.header__new-game:hover,
+.header__new-game:focus-visible {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -98,9 +107,10 @@ body {
  * Inner Container - contains both Game Section & Status Section.
  */
 .innercontainer {
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(150px, 1fr);
+  gap: 24px;
   color: var(--color-grey);
-  flex-wrap: wrap;
   padding: 0 20px;
 }
 
@@ -108,7 +118,7 @@ body {
  * Game Section
  */
 .game {
-  width: 70%;
+  min-width: 0;
 }
 
 .game__board {
@@ -128,6 +138,18 @@ body {
   padding: 12px 16px;
   color: var(--background-color);
   cursor: pointer;
+  min-width: 54px;
+  height: 54px;
+  text-align: center;
+}
+
+.game__cell:focus-visible,
+.status__number:focus-visible,
+.status__action-undo:focus-visible,
+.status__action-erase:focus-visible,
+.status__difficulty-select:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
 }
 
 .game__cell.game__cell--filled {
@@ -176,13 +198,17 @@ body {
  * Status Section
  */
 .status {
-  width: 30%;
+  display: grid;
+  align-content: start;
+  gap: 22px;
+  min-width: 0;
+  padding-top: 30px;
 }
 
 .status__difficulty {
-  position: relative;
-  top: 39px;
-  left: 20px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .status__difficulty-text {
@@ -212,9 +238,6 @@ body {
 }
 
 .status__time {
-  position: relative;
-  top: 70px;
-  left: 10px;
   text-align: center;
   font-family: 'Teko', sans-serif;
   font-size: 30px;
@@ -223,15 +246,12 @@ body {
   background-color: var(--color-orange);
   color: var(--color-grey-light);
   padding-top: 4px;
-  margin: 0 30px;
 }
 
 .status__numbers {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  position: relative;
-  top: 93px;
-  left: 10px;
+  background-color: var(--color-orange);
 }
 
 .status__number {
@@ -242,45 +262,25 @@ body {
   cursor: pointer;
 }
 
-.status__number.status__number--selected {
-  color: var(--color-blue);
-}
-
 .status__actions {
-  position: relative;
-  top: 100px;
-  left: 10px;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
 .status__action-undo,
-.status__action-erase,
-.status__action-hint,
-.status__action-mistakes-mode,
-.status__action-fast-mode {
+.status__action-erase {
   text-align: center;
   position: relative;
 }
 
 .status__action-undo,
-.status__action-erase,
-.status__action-hint {
-  width: 33.33%;
+.status__action-erase {
   cursor: pointer;
+  min-height: 76px;
 }
 
-.status__action-mistakes-mode {
-  width: 60%;
-}
-
-.status__action-fast-mode {
-  width: 40%;
-}
-
-.status__action-svg,
-.status__action-mistakes-mode-switch,
-.status__action-fast-mode-switch {
+.status__action-svg {
   position: absolute;
   left: 50%;
   transform: translate(-50%, 0);
@@ -298,79 +298,11 @@ body {
   height: 32%;
 }
 
-.status__action-hint .status__action-svg {
-  top: 11px;
-  width: 48%;
-  height: 48%;
-}
-
-.status__action-mistakes-mode-switch,
-.status__action-fast-mode-switch {
-  top: 16px;
-  display: inline-block;
-  width: 46px;
-  height: 26px;
-}
-
 .status__action-text {
   font-size: 16px;
   font-weight: 600;
   line-height: 1.2;
   padding-top: 50px;
-}
-
-/* Hide default HTML checkbox */
-.status__action-mistakes-mode-switch input,
-.status__action-fast-mode-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-/* The slider */
-.status__action-mistakes-mode-slider,
-.status__action-fast-mode-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--color-grey-lighter);
-  border-radius: 26px;
-  -webkit-transition: .4s;
-  transition: .4s;
-}
-
-.status__action-mistakes-mode-slider:before,
-.status__action-fast-mode-slider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: var(--background-color);
-  border-radius: 50%;
-  -webkit-transition: .4s;
-  transition: .4s;
-}
-
-input:checked + .status__action-mistakes-mode-slider,
-input:checked + .status__action-fast-mode-slider {
-  background-color: var(--color-blue);
-}
-
-input:focus + .status__action-mistakes-mode-slider,
-input:focus + .status__action-fast-mode-slider {
-  box-shadow: 0 0 1px var(--color-blue);
-}
-
-input:checked + .status__action-mistakes-mode-slider:before,
-input:checked + .status__action-fast-mode-slider:before {
-  -webkit-transform: translateX(20px);
-  -ms-transform: translateX(20px);
-  transform: translateX(20px);
 }
 
 /**
@@ -453,15 +385,17 @@ input:checked + .status__action-fast-mode-slider:before {
 
 /**
  * Responsive Web Design!
- * 5 Modes:
- * 1. screen width > 670 px (2 column mode)
- * 2. 500px < screen width <= 670 px (1 column mode from here down...)
+ * Responsive modes:
+ * 1. screen width > 720 px (2 column mode)
+ * 2. 500px < screen width <= 720 px (1 column mode from here down...)
  * 3. 350px < screen width <= 500 px
  * 4. 300px < screen width <= 350 px
  * 5. screen width <= 300 px
  */
-@media screen and (max-width: 670px) {
+@media screen and (max-width: 720px) {
   .innercontainer {
+    display: flex;
+    flex-wrap: wrap;
     max-width: 500px;
     margin: 0 auto;
   }
@@ -478,13 +412,9 @@ input:checked + .status__action-fast-mode-slider:before {
     text-align: center;
   }
   .status__difficulty {
-    top: -18px;
-    left: 0;
     width: 70%;
   }
   .status__time {
-    top: -20px;
-    left: 0;
     width: 30%;
     margin: 0;
     background-color: var(--background-color);
@@ -492,8 +422,6 @@ input:checked + .status__action-fast-mode-slider:before {
     font-size: 22px;
   }
   .status__numbers {
-    top: -10px;
-    left: 0;
     width: 100%;
     grid-template-columns: repeat(9, 1fr);
     background-color: var(--color-orange);
@@ -502,22 +430,12 @@ input:checked + .status__action-fast-mode-slider:before {
     padding: 12px 0;
   }
   .status__actions {
-    top: 0;
-    left: 0;
     width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .status__action-undo,
-  .status__action-erase,
-  .status__action-hint {
-    width: 16.66%;
-  }
-
-  .status__action-mistakes-mode {
-    width: 30%;
-  }
-
-  .status__action-fast-mode {
-    width: 20%;
+  .status__action-erase {
+    min-height: 76px;
   }
 }
 
@@ -543,17 +461,8 @@ input:checked + .status__action-fast-mode-slider:before {
     padding: 4px 0;
   }
   .status__action-undo,
-  .status__action-erase,
-  .status__action-hint {
-    width: 33%;
-  }
-
-  .status__action-mistakes-mode {
-    width: 60%;
-  }
-
-  .status__action-fast-mode {
-    width: 40%;
+  .status__action-erase {
+    min-height: 70px;
   }
 
   .overlay__text {

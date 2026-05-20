@@ -19,6 +19,7 @@
  * open source community!
  */
 import { getSudoku } from './sudoku';
+import type { ChangeEvent } from 'react';
 
 /**
  * The Sudoku position is 9x9.
@@ -135,7 +136,7 @@ function _cellAvailable(tempInitArray: string[], box: number, value: number) {
 /**
  * Generates a Unique Sudoku puzzle from a solved Sudoku.
  */
-function _generateUniqueSudoku(solvedArray: string[], difficulty: string, e?: React.ChangeEvent<HTMLSelectElement>) {
+function _generateUniqueSudoku(solvedArray: string[], difficulty: string, e?: ChangeEvent<HTMLSelectElement>) {
   let currentDifficulty = difficulty;
   let minimumCells, maximumCells, totalCells, box, cell;
 
@@ -209,7 +210,7 @@ function _generateUniqueSudoku(solvedArray: string[], difficulty: string, e?: Re
   return tempInitArray;
 }
 
-export const getUniqueSudoku = (difficulty: string, e?: React.ChangeEvent<HTMLSelectElement>) => {
+export const getUniqueSudoku = (difficulty: string, e?: ChangeEvent<HTMLSelectElement>) => {
   let temporaryInitArray = nullArray.slice();
   let temporarySolvedArray = nullArray.slice();
   let sudoku = getSudoku();

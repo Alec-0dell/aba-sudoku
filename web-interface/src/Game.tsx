@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import moment from 'moment';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { Header } from './components/layout/Header';
 import { GameSection } from './components/layout/GameSection';
 import { StatusSection } from './components/layout/StatusSection';
@@ -9,31 +8,25 @@ import { useSudokuContext } from './context/SudokuContext';
 /**
  * Game is the main React component.
  */
-export const Game: React.FC<{}> = () => {
+export const Game = () => {
   /**
    * All the variables for holding state:
    * gameArray: Holds the current state of the game.
    * initArray: Holds the initial state of the game.
    * solvedArray: Holds the solved position of the game.
    * difficulty: Difficulty level - 'Easy', 'Medium' or 'Hard'
-   * numberSelected: The Number selected in the Status section.
    * timeGameStarted: Time the current game was started.
-   * mistakesMode: Is Mistakes allowed or not?
-   * fastMode: Is Fast Mode enabled?
    * cellSelected: If a game cell is selected by the user, holds the index.
    * history: history of the current game, for 'Undo' purposes.
    * overlay: Is the 'Game Solved' overlay enabled?
    * won: Is the game 'won'?
    */
-  let { numberSelected, setNumberSelected,
-        gameArray, setGameArray,
+  let { gameArray, setGameArray,
         difficulty, setDifficulty,
         setTimeGameStarted,
-        fastMode, setFastMode,
         cellSelected, setCellSelected,
         initArray, setInitArray,
         setWon } = useSudokuContext();
-  let [ mistakesMode, setMistakesMode ] = useState<boolean>(false);
   let [ history, setHistory ] = useState<string[][]>([]);
   let [ solvedArray, setSolvedArray ] = useState<string[]>([]);
   let [ overlay, setOverlay ] = useState<boolean>(false);
@@ -41,14 +34,13 @@ export const Game: React.FC<{}> = () => {
   /**
    * Creates a new game and initializes the state variables.
    */
-  function _createNewGame(e?: React.ChangeEvent<HTMLSelectElement>) {
+  function _createNewGame(e?: ChangeEvent<HTMLSelectElement>) {
     let [ temporaryInitArray, temporarySolvedArray ] = getUniqueSudoku(difficulty, e);
 
     setInitArray(temporaryInitArray);
     setGameArray(temporaryInitArray);
     setSolvedArray(temporarySolvedArray);
-    setNumberSelected('0');
-    setTimeGameStarted(moment());
+    setTimeGameStarted(Date.now());
     setCellSelected(-1);
     setHistory([]);
     setWon(false);
@@ -94,23 +86,6 @@ export const Game: React.FC<{}> = () => {
   }
 
   /**
-   * A 'user fill' will be passed on to the
-   * _fillCell function above.
-   */
-  function _userFillCell(index: number, value: string) {
-    if (mistakesMode) {
-      if (value === solvedArray[index]) {
-        _fillCell(index, value);
-      }
-      else {
-        // TODO: Flash - Mistakes not allowed in Mistakes Mode
-      }
-    } else {
-      _fillCell(index, value);
-    }
-  }
-
-  /**
    * On Click of 'New Game' link,
    * create a new game.
    */
@@ -122,9 +97,6 @@ export const Game: React.FC<{}> = () => {
    * On Click of a Game cell.
    */
   function onClickCell(indexOfArray: number) {
-    if (fastMode && numberSelected !== '0') {
-      _userFillCell(indexOfArray, numberSelected);
-    }
     setCellSelected(indexOfArray);
   }
 
@@ -133,20 +105,18 @@ export const Game: React.FC<{}> = () => {
    * 1. Update 'Difficulty' level
    * 2. Create New Game
    */
-  function onChangeDifficulty(e: React.ChangeEvent<HTMLSelectElement>) {
+  function onChangeDifficulty(e: ChangeEvent<HTMLSelectElement>) {
     setDifficulty(e.target.value);
     _createNewGame(e);
   }
 
   /**
    * On Click of Number in Status section,
-   * either fill cell or set the number.
+   * fill the selected cell.
    */
   function onClickNumber(number: string) {
-    if (fastMode) {
-      setNumberSelected(number)
-    } else if (cellSelected !== -1) {
-      _userFillCell(cellSelected,number);
+    if (cellSelected !== -1) {
+      _fillCell(cellSelected, number);
     }
   }
 
@@ -174,32 +144,15 @@ export const Game: React.FC<{}> = () => {
     }
   }
 
-  /**
-   * On Click Hint,
-   * fill the selected cell if its empty or wrong number is filled.
-   */
-  function onClickHint() {
-    if (cellSelected !== -1) {
-      _fillCell(cellSelected, solvedArray[cellSelected]);
+  function shouldIgnoreKeyboardShortcut(target: EventTarget | null) {
+    if (!(target instanceof HTMLElement)) {
+      return false;
     }
-  }
 
-  /**
-   * Toggle Mistakes Mode
-   */
-  function  onClickMistakesMode() {
-    setMistakesMode(!mistakesMode);
-  }
-
-  /**
-   * Toggle Fast Mode
-   */
-  function onClickFastMode() {
-    if (fastMode) {
-      setNumberSelected('0');
-    }
-    setCellSelected(-1);
-    setFastMode(!fastMode);
+    return target.isContentEditable ||
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT';
   }
 
   /**
@@ -218,6 +171,39 @@ export const Game: React.FC<{}> = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    function onKeyDown(event: globalThis.KeyboardEvent) {
+      if (shouldIgnoreKeyboardShortcut(event.target)) {
+        return;
+      }
+
+      const isUndo = event.key.toLowerCase() === 'z' && (event.metaKey || event.ctrlKey);
+      if (isUndo) {
+        event.preventDefault();
+        onClickUndo();
+        return;
+      }
+
+      if (cellSelected === -1 || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      if (/^[1-9]$/.test(event.key)) {
+        event.preventDefault();
+        onClickNumber(event.key);
+        return;
+      }
+
+      if (event.key === 'Backspace' || event.key === 'Delete') {
+        event.preventDefault();
+        onClickErase();
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [cellSelected, gameArray, history]);
+
   return (
     <>
       <div className={overlay?"container blur":"container"}>
@@ -228,12 +214,9 @@ export const Game: React.FC<{}> = () => {
           />
           <StatusSection
             onClickNumber={(number: string) => onClickNumber(number)}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChangeDifficulty(e)}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => onChangeDifficulty(e)}
             onClickUndo={onClickUndo}
             onClickErase={onClickErase}
-            onClickHint={onClickHint}
-            onClickMistakesMode={onClickMistakesMode}
-            onClickFastMode={onClickFastMode}
           />
         </div>
       </div>
