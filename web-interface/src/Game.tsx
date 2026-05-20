@@ -1,5 +1,5 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
-import { fetchRandomPuzzle, validatePuzzle, type Difficulty } from './api/client';
+import { fetchRandomPuzzle, solvePuzzle, validatePuzzle, type Difficulty } from './api/client';
 import { Header } from './components/layout/Header';
 import { GameSection } from './components/layout/GameSection';
 import { StatusSection } from './components/layout/StatusSection';
@@ -158,6 +158,36 @@ export const Game = () => {
     }
   }
 
+  async function onClickSolve() {
+    if (loading || gameArray.length !== 81) {
+      return;
+    }
+
+    setLoading(true);
+    setStatusMessage('Solving with Prolog...');
+
+    try {
+      const result = await solvePuzzle(gameArray.join(''));
+
+      if (result.status === 'solved' && result.solution) {
+        setHistory([...history, gameArray.slice()]);
+        setGameArray(result.solution.split(''));
+        setCellSelected(-1);
+        setWon(true);
+        setStatusMessage(`Solved by ${result.solver} in ${result.time_ms.toFixed(1)}ms.`);
+        return;
+      }
+
+      const detail = result.errors.length ? ` ${result.errors.join(' ')}` : '';
+      setStatusMessage(`Solver returned ${result.status}.${detail}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to solve puzzle.';
+      setStatusMessage(`Backend unavailable: ${message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function shouldIgnoreKeyboardShortcut(target: EventTarget | null) {
     if (!(target instanceof HTMLElement)) {
       return false;
@@ -230,6 +260,7 @@ export const Game = () => {
             onChange={(e: ChangeEvent<HTMLSelectElement>) => onChangeDifficulty(e)}
             onClickUndo={onClickUndo}
             onClickErase={onClickErase}
+            onClickSolve={onClickSolve}
             disabled={loading}
           />
         </div>

@@ -9,6 +9,7 @@ type StatusSectionProps = {
   onClickNumber: (number: string) => void,
   onClickUndo: () => void,
   onClickErase: () => void,
+  onClickSolve: () => void,
   disabled?: boolean
 };
 
@@ -25,6 +26,9 @@ export const StatusSection = (props: StatusSectionProps) => {
         <Action action='undo' onClickAction={props.onClickUndo} disabled={props.disabled} />
         <Action action='erase' onClickAction={props.onClickErase} disabled={props.disabled} />
       </div>
+      <button className="status__solve" type="button" onClick={props.onClickSolve} disabled={props.disabled}>
+        Solve
+      </button>
     </section>
   )
 }
