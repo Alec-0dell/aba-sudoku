@@ -2,7 +2,6 @@ import { useState, useEffect, type ChangeEvent } from 'react';
 import { Header } from './components/layout/Header';
 import { GameSection } from './components/layout/GameSection';
 import { StatusSection } from './components/layout/StatusSection';
-import { getUniqueSudoku } from './solver/UniqueSudoku';
 import { useSudokuContext } from './context/SudokuContext';
 
 /**
