@@ -1,5 +1,6 @@
 type HeaderProps = {
-  onClick: () => void
+  onClick: () => void,
+  disabled?: boolean
 };
 
 /**
@@ -11,7 +12,7 @@ export const Header = (props: HeaderProps) => {
       <h1>
         Su<span className="header__group-one">do</span><span className="header__group-two">ku</span>
       </h1>
-      <button className="header__new-game" type="button" onClick={props.onClick}>
+      <button className="header__new-game" type="button" onClick={props.onClick} disabled={props.disabled}>
         New Game
       </button>
     </header>

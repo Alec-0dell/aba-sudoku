@@ -1,6 +1,7 @@
 type ActionProps = {
   action: string,
-  onClickAction: () => void
+  onClickAction: () => void,
+  disabled?: boolean
 };
 
 type SvgProps = {
@@ -35,7 +36,7 @@ export const Action = (props: ActionProps) => {
                       : props.action === 'erase'
                       ? "status__action-erase"
                       : ""
-                    } onClick={props.onClickAction} >
+                    } onClick={props.onClickAction} disabled={props.disabled} >
       <Svg action={props.action} />
       <p className="status__action-text">
         {

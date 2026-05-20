@@ -97,6 +97,15 @@ body {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.header__new-game:disabled,
+.status__difficulty-select:disabled,
+.status__number:disabled,
+.status__action-undo:disabled,
+.status__action-erase:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .header::after {
   content: "";
   display: block;
@@ -303,6 +312,14 @@ body {
   font-weight: 600;
   line-height: 1.2;
   padding-top: 50px;
+}
+
+.status-message {
+  color: var(--color-grey-light);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 20px;
+  padding: 0 20px 20px;
 }
 
 /**

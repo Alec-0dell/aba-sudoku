@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState } from 'react';
+import type { Difficulty } from '../api/client';
 
 type SudokuContextProps = {
   gameArray: string[],
   setGameArray: React.Dispatch<React.SetStateAction<string[]>>,
-  difficulty: string,
-  setDifficulty: React.Dispatch<React.SetStateAction<string>>,
+  difficulty: Difficulty,
+  setDifficulty: React.Dispatch<React.SetStateAction<Difficulty>>,
   timeGameStarted: number,
   setTimeGameStarted: React.Dispatch<React.SetStateAction<number>>,
   cellSelected: number,
@@ -29,7 +30,7 @@ type SudokuProviderProps = {
 
 export const SudokuProvider = ({ children }: SudokuProviderProps) => {
   let [ gameArray, setGameArray ] = useState<string[]>([]);
-  let [ difficulty,setDifficulty ] = useState<string>('Easy');
+  let [ difficulty,setDifficulty ] = useState<Difficulty>('Easy');
   let [ timeGameStarted, setTimeGameStarted ] = useState<number>(Date.now());
   let [ cellSelected, setCellSelected ] = useState<number>(-1);
   let [ initArray, setInitArray ] = useState<string[]>([]);

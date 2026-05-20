@@ -9,6 +9,7 @@ type StatusSectionProps = {
   onClickNumber: (number: string) => void,
   onClickUndo: () => void,
   onClickErase: () => void,
+  disabled?: boolean
 };
 
 /**
@@ -17,12 +18,12 @@ type StatusSectionProps = {
 export const StatusSection = (props: StatusSectionProps) => {
   return (
     <section className="status">
-      <Difficulty onChange={props.onChange} />
+      <Difficulty onChange={props.onChange} disabled={props.disabled} />
       <Timer />
-      <Numbers onClickNumber={(number) => props.onClickNumber(number)} />
+      <Numbers onClickNumber={(number) => props.onClickNumber(number)} disabled={props.disabled} />
       <div className="status__actions">
-        <Action action='undo' onClickAction={props.onClickUndo} />
-        <Action action='erase' onClickAction={props.onClickErase} />
+        <Action action='undo' onClickAction={props.onClickUndo} disabled={props.disabled} />
+        <Action action='erase' onClickAction={props.onClickErase} disabled={props.disabled} />
       </div>
     </section>
   )

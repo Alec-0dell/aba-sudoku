@@ -130,7 +130,7 @@ export const GameSection = (props: GameSectionProps) => {
                   {
                     rows.map((column) => {
                       const indexOfArray = row * 9 + column;
-                      const value = gameArray[indexOfArray];
+                      const value = gameArray[indexOfArray] ?? '0';
 
                       if (cellSelected === indexOfArray) {
                         return _selectedCell(indexOfArray, value, 'highlight');
