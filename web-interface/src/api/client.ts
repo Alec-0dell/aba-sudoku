@@ -71,15 +71,18 @@ export function validatePuzzle(puzzle: string): Promise<PuzzleValidationResponse
   });
 }
 
-export function solvePuzzle(puzzle: string): Promise<SolverResult> {
+export type SolverInfo = { id: string; name: string; status: string };
+
+export function fetchSolvers(): Promise<SolverInfo[]> {
+  return request<SolverInfo[]>('/solvers');
+}
+
+export function solvePuzzle(puzzle: string, solver?: string, options?: { explain?: boolean; max_steps?: number }): Promise<SolverResult> {
+  const body: any = { puzzle, options: { explain: true, max_steps: 10, ...(options ?? {}) } };
+  if (solver) body.solver = solver;
+
   return request<SolverResult>('/solve', {
     method: 'POST',
-    body: JSON.stringify({
-      puzzle,
-      options: {
-        explain: true,
-        max_steps: 10,
-      },
-    }),
+    body: JSON.stringify(body),
   });
 }

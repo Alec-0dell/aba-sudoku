@@ -9,6 +9,7 @@ class SolverOptions(BaseModel):
 class SolverRequest(BaseModel):
     puzzle: str
     difficulty: str | None = None
+    solver: str | None = None
     options: SolverOptions = Field(default_factory=SolverOptions)
 
 

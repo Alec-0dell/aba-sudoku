@@ -230,6 +230,8 @@ body {
 .status__difficulty-select {
   position: relative;
   display: inline-block;
+  flex: 1 1 auto;
+  min-width: 0;
   border: none;
   -moz-appearance: none;
   -webkit-appearance: none;

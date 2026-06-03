@@ -1,5 +1,5 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
-import { fetchRandomPuzzle, solvePuzzle, validatePuzzle, type Difficulty } from './api/client';
+import { fetchRandomPuzzle, solvePuzzle, validatePuzzle, fetchSolvers, type SolverInfo, type Difficulty } from './api/client';
 import { Header } from './components/layout/Header';
 import { GameSection } from './components/layout/GameSection';
 import { StatusSection } from './components/layout/StatusSection';
@@ -30,6 +30,14 @@ export const Game = () => {
   let [ overlay, setOverlay ] = useState<boolean>(false);
   let [ loading, setLoading ] = useState<boolean>(true);
   let [ statusMessage, setStatusMessage ] = useState<string>('');
+  const defaultSolvers: SolverInfo[] = [
+    { id: 'prolog', name: 'Prolog', status: 'loading' },
+    { id: 'clingo', name: 'Clingo', status: 'loading' },
+  ];
+
+  let [ solvers, setSolvers ] = useState<SolverInfo[]>(defaultSolvers);
+  let [ selectedSolver, setSelectedSolver ] = useState<string>('prolog');
+  let [ solversLoaded, setSolversLoaded ] = useState<boolean>(false);
 
   /**
    * Creates a new game and initializes the state variables.
@@ -56,6 +64,21 @@ export const Game = () => {
       setStatusMessage(`Backend unavailable: ${message}`);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function _loadSolvers() {
+    try {
+      const list = await fetchSolvers();
+      setSolvers(list);
+      if (list.length && !list.find((s) => s.id === selectedSolver)) {
+        setSelectedSolver(list[0].id);
+      }
+      setSolversLoaded(true);
+    } catch {
+      // backend may not expose list; mark as unavailable
+      setSolvers(defaultSolvers.map((s) => ({ ...s, status: 'unavailable' })));
+      setSolversLoaded(true);
     }
   }
 
@@ -164,10 +187,11 @@ export const Game = () => {
     }
 
     setLoading(true);
-    setStatusMessage('Solving with Prolog...');
+    const solverName = solvers.find((s) => s.id === selectedSolver)?.name ?? selectedSolver;
+    setStatusMessage(`Solving with ${solverName}...`);
 
     try {
-      const result = await solvePuzzle(gameArray.join(''));
+      const result = await solvePuzzle(gameArray.join(''), selectedSolver, { explain: true, max_steps: 10 });
 
       if (result.status === 'solved' && result.solution) {
         setHistory([...history, gameArray.slice()]);
@@ -211,6 +235,7 @@ export const Game = () => {
    */
   useEffect(() => {
     _createNewGame();
+    _loadSolvers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -262,6 +287,10 @@ export const Game = () => {
             onClickErase={onClickErase}
             onClickSolve={onClickSolve}
             disabled={loading}
+            solvers={solvers}
+            selectedSolver={selectedSolver}
+            onChangeSolver={(id: string) => setSelectedSolver(id)}
+            solveDisabled={!solversLoaded}
           />
         </div>
         {
