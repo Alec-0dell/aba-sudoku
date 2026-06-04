@@ -59,11 +59,35 @@ def test_validate_endpoint_for_invalid_puzzle() -> None:
     assert data["errors"]
 
 
-def test_solvers_endpoint_lists_prolog() -> None:
+def test_solvers_endpoint_lists_available_solvers() -> None:
     response = client.get("/solvers")
 
     assert response.status_code == 200
-    assert response.json() == [{"id": "prolog", "name": "SWI-Prolog CLP(FD)", "status": "available"}]
+    solvers = {solver["id"]: solver for solver in response.json()}
+
+    assert solvers["python"] == {"id": "python", "name": "Python", "status": "available"}
+    assert solvers["prolog"]["name"] == "Prolog"
+    assert solvers["clingo"]["name"] == "Clingo"
+
+
+def test_solve_endpoint_defaults_to_python() -> None:
+    response = client.post(
+        "/solve",
+        json={
+            "puzzle": VALID_PUZZLE,
+            "options": {
+                "explain": True,
+                "max_steps": 2,
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["solver"] == "python"
+    assert data["status"] == "solved"
+    assert data["solution"] == VALID_SOLUTION
+    assert len(data["steps"]) == 2
 
 
 @pytest.mark.skipif(which("swipl") is None, reason="SWI-Prolog is not installed")
@@ -72,6 +96,7 @@ def test_solve_endpoint_solves_with_prolog() -> None:
         "/solve",
         json={
             "puzzle": VALID_PUZZLE,
+            "solver": "prolog",
             "options": {
                 "explain": True,
                 "max_steps": 2,

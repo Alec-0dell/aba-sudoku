@@ -31,12 +31,13 @@ export const Game = () => {
   let [ loading, setLoading ] = useState<boolean>(true);
   let [ statusMessage, setStatusMessage ] = useState<string>('');
   const defaultSolvers: SolverInfo[] = [
+    { id: 'python', name: 'Python', status: 'loading' },
     { id: 'prolog', name: 'Prolog', status: 'loading' },
     { id: 'clingo', name: 'Clingo', status: 'loading' },
   ];
 
   let [ solvers, setSolvers ] = useState<SolverInfo[]>(defaultSolvers);
-  let [ selectedSolver, setSelectedSolver ] = useState<string>('prolog');
+  let [ selectedSolver, setSelectedSolver ] = useState<string>('python');
   let [ solversLoaded, setSolversLoaded ] = useState<boolean>(false);
 
   /**
