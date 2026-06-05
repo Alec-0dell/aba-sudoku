@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import platform
+import shutil
 from ast import literal_eval
 from pathlib import Path
 import subprocess
@@ -15,6 +17,62 @@ from backend.app.core.board import (
 )
 from backend.app.core.solver_contract import SolverOptions, SolverResult, SolverStats, SolverStep
 
+# written by claude, ran into very confusing issues while running on my machine at home (worked fine on eduroam)
+def _resolve_swipl() -> list[str]:
+    """
+    Resolve the swipl executable for the current platform/environment.
+
+    Resolution order:
+      1. Native swipl on PATH (works on macOS, Linux, and Windows without restrictions)
+      2. WSL swipl — for Windows machines where the native binary is blocked by
+         Application Control (Smart App Control / WDAC). Tries both the snap path
+         and the plain 'swipl' name inside WSL.
+      3. Falls back to ['swipl'] and lets the OS surface a clear FileNotFoundError.
+    """
+    # Non-Windows: native swipl is always the right answer
+    if platform.system() != "Windows":
+        return ["swipl"]
+
+    # Windows: try native first (works fine on machines without AppLocker/SAC)
+    if shutil.which("swipl") is not None:
+        try:
+            result = subprocess.run(
+                ["swipl", "--version"],
+                capture_output=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                return ["swipl"]
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+    # Windows fallback: route through WSL
+    if shutil.which("wsl") is not None:
+        # Try snap-installed path first (installed via `sudo snap install swi-prolog`)
+        snap_path = "/snap/swi-prolog/current/usr/bin/swipl"
+        for candidate in [snap_path, "swipl"]:
+            try:
+                result = subprocess.run(
+                    ["wsl", candidate, "--version"],
+                    capture_output=True,
+                    timeout=5,
+                )
+                if result.returncode == 0:
+                    return ["wsl", candidate]
+            except (OSError, subprocess.TimeoutExpired):
+                continue
+
+    # Last resort, let it fail at solve time
+    return ["swipl"]
+
+
+def _windows_path_to_wsl(path: Path) -> str:
+    """Convert a Windows path (C:\\foo\\bar) to a WSL mount path (/mnt/c/foo/bar)."""
+    parts = path.parts
+    drive = parts[0].rstrip(":\\").lower()
+    rest = "/".join(p.replace("\\", "/") for p in parts[1:])
+    return f"/mnt/{drive}/{rest}"
+
 
 class PrologSudokuSolver:
     name = "prolog"
@@ -22,12 +80,23 @@ class PrologSudokuSolver:
     def __init__(
         self,
         prolog_file: Path | None = None,
-        executable: str = "swipl",
+        executable: list[str] | str | None = None,
         timeout_seconds: float = 15,
     ) -> None:
         self.prolog_file = prolog_file or Path(__file__).resolve().parents[3] / "backend" / "solvers" / "soduko.pl"
-        self.executable = executable
+        # Allow callers to pin a specific executable; otherwise auto-resolve.
+        if executable is None:
+            self._cmd = _resolve_swipl()
+        elif isinstance(executable, str):
+            self._cmd = [executable]
+        else:
+            self._cmd = list(executable)
         self.timeout_seconds = timeout_seconds
+
+    @property
+    def executable(self) -> str:
+        """Return the primary executable name (for error messages)."""
+        return self._cmd[0]
 
     def solve(self, puzzle: str, options: SolverOptions | None = None) -> SolverResult:
         options = options or SolverOptions()
@@ -75,8 +144,19 @@ class PrologSudokuSolver:
 
     def _run_prolog(self, grid: Grid) -> Grid | None:
         goal = f"(Rows = {self._grid_to_prolog_term(grid)}, sudoku(Rows) -> write(Rows), halt(0); halt(2))"
+
+        # When routing through WSL, the prolog file path must be in WSL format.
+        using_wsl = len(self._cmd) >= 2 and self._cmd[0] == "wsl"
+        pl_path = (
+            _windows_path_to_wsl(self.prolog_file)
+            if using_wsl
+            else str(self.prolog_file)
+        )
+
+        cmd = self._cmd + ["-q", "-s", pl_path, "-g", goal]
+
         completed = subprocess.run(
-            [self.executable, "-q", "-s", str(self.prolog_file), "-g", goal],
+            cmd,
             capture_output=True,
             text=True,
             timeout=self.timeout_seconds,
