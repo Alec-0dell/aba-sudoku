@@ -1,5 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+import importlib
+from shutil import which
 
 from backend.app.core.board import (
     BoardValidationError,
@@ -8,7 +10,9 @@ from backend.app.core.board import (
 )
 from backend.app.core.puzzle_bank import DIFFICULTIES, PuzzleBank
 from backend.app.core.solver_contract import SolverOptions, SolverResult
+from backend.app.solvers.clingo_solver import ClingoSudokuSolver
 from backend.app.solvers.prolog_solver import PrologSudokuSolver
+from backend.app.solvers.python_solver import PythonSudokuSolver
 
 
 # Try to include Clingo solver when available
@@ -46,19 +50,43 @@ class BenchmarkRow:
 
 def main() -> None:
     bank = PuzzleBank()
+    python_solver = PythonSudokuSolver()
     # Ensure the full banks are loaded before running benchmarks so the
     # sample/preload (5 records) doesn't affect the attempted counts.
     bank._background_load_all()
     prolog_solver = PrologSudokuSolver()
     solvers = [
         SolverSpec(
-            name="prolog",
-            solve=lambda puzzle: prolog_solver.solve(
+            name="python",
+            solve=lambda puzzle: python_solver.solve(
                 puzzle,
                 SolverOptions(explain=False),
             ),
-        )
+        ),
     ]
+
+    if which(prolog_solver.executable) is not None:
+        solvers.append(
+            SolverSpec(
+                name="prolog",
+                solve=lambda puzzle: prolog_solver.solve(
+                    puzzle,
+                    SolverOptions(explain=False),
+                ),
+            )
+        )
+
+    clingo_solver = ClingoSudokuSolver()
+    if which(clingo_solver.executable) is not None or importlib.util.find_spec("clingo") is not None:
+        solvers.append(
+            SolverSpec(
+                name="clingo",
+                solve=lambda puzzle: clingo_solver.solve(
+                    puzzle,
+                    SolverOptions(explain=False),
+                ),
+            )
+        )
 
     if _clingo_available and ClingoSudokuSolver is not None:
         clingo_solver = ClingoSudokuSolver()

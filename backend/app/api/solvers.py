@@ -3,13 +3,15 @@ import shutil
 import importlib
 
 from backend.app.core.solver_contract import SolverRequest, SolverResult
-from backend.app.solvers.prolog_solver import PrologSudokuSolver
 from backend.app.solvers.clingo_solver import ClingoSudokuSolver
+from backend.app.solvers.prolog_solver import PrologSudokuSolver
+from backend.app.solvers.python_solver import PythonSudokuSolver
 
 
 router = APIRouter(tags=["solvers"])
 
 # Instantiate solver wrappers (they won't call executables until used)
+_python_solver = PythonSudokuSolver()
 _prolog_solver = PrologSudokuSolver()
 _clingo_solver = ClingoSudokuSolver()
 
@@ -30,6 +32,7 @@ def list_solvers() -> list[dict[str, str]]:
     )
 
     return [
+        {"id": "python", "name": "Python", "status": "available"},
         {"id": "prolog", "name": "Prolog", "status": prolog_status},
         {"id": "clingo", "name": "Clingo", "status": clingo_status},
     ]
@@ -37,10 +40,19 @@ def list_solvers() -> list[dict[str, str]]:
 
 @router.post("/solve", response_model=SolverResult)
 def solve(request: SolverRequest) -> SolverResult:
-    # Dispatch to the requested solver if provided
+    if request.solver in (None, "python"):
+        return _python_solver.solve(request.puzzle, request.options)
+
+    if request.solver == "prolog":
+        return _prolog_solver.solve(request.puzzle, request.options)
+
     if request.solver == "clingo":
         return _clingo_solver.solve(request.puzzle, request.options)
 
-    # Default to Prolog solver
-    return _prolog_solver.solve(request.puzzle, request.options)
-
+    return SolverResult(
+        solver=request.solver,
+        status="error",
+        solution=None,
+        time_ms=0,
+        errors=[f"Unknown solver {request.solver!r}."],
+    )
