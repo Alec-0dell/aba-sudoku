@@ -18,6 +18,14 @@ _clingo_solver = ClingoSudokuSolver()
 _nn_solver = NNSudokuSolver()
 
 
+def warm_up_nn() -> None:
+    """Load the NN model weights into memory. Safe to call from a background thread."""
+    try:
+        _nn_solver._get_model()
+    except Exception:
+        pass  # Missing weights or import error — will surface properly at solve time.
+
+
 def _exe_available(name: str) -> bool:
     return shutil.which(name) is not None
 
