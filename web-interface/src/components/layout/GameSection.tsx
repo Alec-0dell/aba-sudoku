@@ -2,7 +2,8 @@ import type { KeyboardEvent } from 'react';
 import { useSudokuContext } from '../../context/SudokuContext';
 
 type GameSectionProps = {
-  onClick: (indexOfArray: number) => void
+  onClick: (indexOfArray: number) => void,
+  activeStepIndex?: number | null,
 };
 
 /**
@@ -70,20 +71,21 @@ export const GameSection = (props: GameSectionProps) => {
   function _selectedCell(indexOfArray: number, value: string, highlight: string) {
     const displayValue = value === '0' ? '' : value;
     const label = value === '0' ? `Empty cell ${indexOfArray + 1}` : `Cell ${indexOfArray + 1}, ${value}`;
+    const stepClass = props.activeStepIndex === indexOfArray ? ' game__cell--step' : '';
 
     if (value !== '0') {
       if (initArray[indexOfArray] === '0') {
         return (
-          <td className={`game__cell game__cell--userfilled game__cell--${highlight}selected`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
+          <td className={`game__cell game__cell--userfilled game__cell--${highlight}selected${stepClass}`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
         )
       } else {
         return (
-          <td className={`game__cell game__cell--filled game__cell--${highlight}selected`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
+          <td className={`game__cell game__cell--filled game__cell--${highlight}selected${stepClass}`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
         )
       }
     } else {
       return (
-        <td className={`game__cell game__cell--${highlight}selected`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
+        <td className={`game__cell game__cell--${highlight}selected${stepClass}`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
       )
     }
   }
@@ -94,20 +96,21 @@ export const GameSection = (props: GameSectionProps) => {
   function _unselectedCell(indexOfArray: number, value: string) {
     const displayValue = value === '0' ? '' : value;
     const label = value === '0' ? `Empty cell ${indexOfArray + 1}` : `Cell ${indexOfArray + 1}, ${value}`;
+    const stepClass = props.activeStepIndex === indexOfArray ? ' game__cell--step' : '';
 
     if (value !== '0') {
       if (initArray[indexOfArray] === '0') {
         return (
-          <td className="game__cell game__cell--userfilled" key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
+          <td className={`game__cell game__cell--userfilled${stepClass}`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
         )
       } else {
         return (
-          <td className="game__cell game__cell--filled" key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
+          <td className={`game__cell game__cell--filled${stepClass}`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
         )
       }
     } else {
       return (
-        <td className="game__cell" key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
+        <td className={`game__cell${stepClass}`} key={indexOfArray} role="button" tabIndex={0} aria-label={label} onClick={() => props.onClick(indexOfArray)} onKeyDown={(event) => onCellKeyDown(event, indexOfArray)}>{displayValue}</td>
       )
     }
   }

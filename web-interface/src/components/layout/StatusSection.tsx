@@ -11,11 +11,22 @@ type StatusSectionProps = {
   onClickUndo: () => void,
   onClickErase: () => void,
   onClickSolve: () => void,
+  onClickStepSolve?: () => void,
+  onClickStepPrevious?: () => void,
+  onClickStepNext?: () => void,
   disabled?: boolean
   solvers?: SolverInfo[];
   selectedSolver?: string;
   onChangeSolver?: (id: string) => void;
   solveDisabled?: boolean;
+  stepDisabled?: boolean;
+  stepActive?: boolean;
+  stepCurrent?: number;
+  stepTotal?: number;
+  stepSummary?: string;
+  stepDetails?: string;
+  stepPreviousDisabled?: boolean;
+  stepNextDisabled?: boolean;
 };
 
 /**
@@ -34,6 +45,42 @@ export const StatusSection = (props: StatusSectionProps) => {
       <button className="status__solve" type="button" onClick={props.onClickSolve} disabled={props.disabled || props.solveDisabled}>
         Solve
       </button>
+      <button className="status__step" type="button" onClick={props.onClickStepSolve} disabled={props.disabled || props.stepDisabled}>
+        Python Steps
+      </button>
+      {props.stepActive && (
+        <div className="status__walkthrough">
+          <div className="status__walkthrough-controls">
+            <button
+              className="status__walkthrough-arrow"
+              type="button"
+              onClick={props.onClickStepPrevious}
+              disabled={props.disabled || props.stepPreviousDisabled}
+              aria-label="Previous step"
+            >
+              &larr;
+            </button>
+            <span className="status__walkthrough-count">
+              {props.stepCurrent ?? 0}/{props.stepTotal ?? 0}
+            </span>
+            <button
+              className="status__walkthrough-arrow"
+              type="button"
+              onClick={props.onClickStepNext}
+              disabled={props.disabled || props.stepNextDisabled}
+              aria-label="Next step"
+            >
+              &rarr;
+            </button>
+          </div>
+          {props.stepSummary && (
+            <p className="status__walkthrough-reason">{props.stepSummary}</p>
+          )}
+          {props.stepDetails && (
+            <p className="status__walkthrough-details">{props.stepDetails}</p>
+          )}
+        </div>
+      )}
       {props.solvers && (
         <div className="status__difficulty">
           <span className="status__difficulty-text">Solver:&nbsp;&nbsp;</span>

@@ -16,19 +16,21 @@ export type PuzzleValidationResponse = {
   errors: string[];
 };
 
+export type SolverStep = {
+  index: number;
+  row: number;
+  col: number;
+  value: string;
+  reason: string;
+  details: string;
+};
+
 export type SolverResult = {
   solver: string;
   status: 'solved' | 'unsolved' | 'invalid' | 'error';
   solution: string | null;
   time_ms: number;
-  steps: Array<{
-    index: number;
-    row: number;
-    col: number;
-    value: string;
-    reason: string;
-    details: string;
-  }>;
+  steps: SolverStep[];
   stats: {
     placements: number;
     guesses: number | null;
@@ -77,8 +79,8 @@ export function fetchSolvers(): Promise<SolverInfo[]> {
   return request<SolverInfo[]>('/solvers');
 }
 
-export function solvePuzzle(puzzle: string, solver?: string, options?: { explain?: boolean; max_steps?: number }): Promise<SolverResult> {
-  const body: any = { puzzle, options: { explain: true, max_steps: 10, ...(options ?? {}) } };
+export function solvePuzzle(puzzle: string, solver?: string, options?: { explain?: boolean; max_steps?: number | null }): Promise<SolverResult> {
+  const body: any = { puzzle, options: { explain: true, ...(options ?? {}) } };
   if (solver) body.solver = solver;
 
   return request<SolverResult>('/solve', {

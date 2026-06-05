@@ -1,9 +1,16 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
-import { fetchRandomPuzzle, solvePuzzle, validatePuzzle, fetchSolvers, type SolverInfo, type Difficulty } from './api/client';
+import { fetchRandomPuzzle, solvePuzzle, validatePuzzle, fetchSolvers, type SolverInfo, type Difficulty, type SolverStep } from './api/client';
 import { Header } from './components/layout/Header';
 import { GameSection } from './components/layout/GameSection';
 import { StatusSection } from './components/layout/StatusSection';
 import { useSudokuContext } from './context/SudokuContext';
+
+type PythonWalkthrough = {
+  baseBoard: string[];
+  steps: SolverStep[];
+  currentStep: number;
+  timeMs: number;
+};
 
 /**
  * Game is the main React component.
@@ -39,6 +46,7 @@ export const Game = () => {
   let [ solvers, setSolvers ] = useState<SolverInfo[]>(defaultSolvers);
   let [ selectedSolver, setSelectedSolver ] = useState<string>('python');
   let [ solversLoaded, setSolversLoaded ] = useState<boolean>(false);
+  let [ walkthrough, setWalkthrough ] = useState<PythonWalkthrough | null>(null);
 
   /**
    * Creates a new game and initializes the state variables.
@@ -57,6 +65,7 @@ export const Game = () => {
       setTimeGameStarted(Date.now());
       setCellSelected(-1);
       setHistory([]);
+      setWalkthrough(null);
       setWon(false);
       setOverlay(false);
       setStatusMessage('');
@@ -101,6 +110,8 @@ export const Game = () => {
    */
   async function _fillCell(index: number, value: string) {
     if (!loading && initArray[index] === '0') {
+      setWalkthrough(null);
+
       // Direct copy results in interesting set of problems, investigate more!
       let tempArray = gameArray.slice();
       let tempHistory = history.slice();
@@ -148,6 +159,11 @@ export const Game = () => {
     _createNewGame(e.target.value as Difficulty);
   }
 
+  function onChangeSolver(id: string) {
+    setSelectedSolver(id);
+    setWalkthrough(null);
+  }
+
   /**
    * On Click of Number in Status section,
    * fill the selected cell.
@@ -164,6 +180,8 @@ export const Game = () => {
    */
   function onClickUndo() {
     if(history.length) {
+      setWalkthrough(null);
+
       let tempHistory = history.slice();
       let tempArray = tempHistory.pop();
       setHistory(tempHistory);
@@ -187,6 +205,7 @@ export const Game = () => {
       return;
     }
 
+    setWalkthrough(null);
     setLoading(true);
     const solverName = solvers.find((s) => s.id === selectedSolver)?.name ?? selectedSolver;
     setStatusMessage(`Solving with ${solverName}...`);
@@ -210,6 +229,93 @@ export const Game = () => {
       setStatusMessage(`Backend unavailable: ${message}`);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onClickPythonWalkthrough() {
+    if (loading || gameArray.length !== 81) {
+      return;
+    }
+
+    const baseBoard = gameArray.slice();
+    setLoading(true);
+    setSelectedSolver('python');
+    setStatusMessage('Solving with Python...');
+
+    try {
+      const result = await solvePuzzle(baseBoard.join(''), 'python', { explain: true, max_steps: null });
+
+      if (result.status === 'solved' && result.solution) {
+        if (!result.steps.length) {
+          setGameArray(result.solution.split(''));
+          setCellSelected(-1);
+          setWon(true);
+          setStatusMessage(`Already solved by Python in ${result.time_ms.toFixed(1)}ms.`);
+          return;
+        }
+
+        setHistory([...history, baseBoard]);
+        setWalkthrough({
+          baseBoard,
+          steps: result.steps,
+          currentStep: 0,
+          timeMs: result.time_ms,
+        });
+        setGameArray(baseBoard);
+        setCellSelected(-1);
+        setWon(false);
+        setStatusMessage(`Python walkthrough ready in ${result.time_ms.toFixed(1)}ms.`);
+        return;
+      }
+
+      const detail = result.errors.length ? ` ${result.errors.join(' ')}` : '';
+      setStatusMessage(`Python solver returned ${result.status}.${detail}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to solve puzzle.';
+      setStatusMessage(`Backend unavailable: ${message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function boardAtWalkthroughStep(nextWalkthrough: PythonWalkthrough, stepCount: number) {
+    const board = nextWalkthrough.baseBoard.slice();
+    nextWalkthrough.steps.slice(0, stepCount).forEach((step) => {
+      board[step.index] = step.value;
+    });
+    return board;
+  }
+
+  function applyWalkthroughStep(stepCount: number) {
+    if (!walkthrough) {
+      return;
+    }
+
+    const nextStep = Math.max(0, Math.min(stepCount, walkthrough.steps.length));
+    const nextWalkthrough = { ...walkthrough, currentStep: nextStep };
+    const activeStep = nextStep > 0 ? walkthrough.steps[nextStep - 1] : null;
+
+    setWalkthrough(nextWalkthrough);
+    setGameArray(boardAtWalkthroughStep(walkthrough, nextStep));
+    setCellSelected(activeStep ? activeStep.index : -1);
+    setWon(nextStep === walkthrough.steps.length);
+
+    if (nextStep === walkthrough.steps.length) {
+      setStatusMessage(`Walkthrough complete. Python solved in ${walkthrough.timeMs.toFixed(1)}ms.`);
+    } else {
+      setStatusMessage(`Step ${nextStep} of ${walkthrough.steps.length}.`);
+    }
+  }
+
+  function onClickStepPrevious() {
+    if (walkthrough) {
+      applyWalkthroughStep(walkthrough.currentStep - 1);
+    }
+  }
+
+  function onClickStepNext() {
+    if (walkthrough) {
+      applyWalkthroughStep(walkthrough.currentStep + 1);
     }
   }
 
@@ -246,6 +352,18 @@ export const Game = () => {
         return;
       }
 
+      if (walkthrough && event.key === 'ArrowLeft') {
+        event.preventDefault();
+        onClickStepPrevious();
+        return;
+      }
+
+      if (walkthrough && event.key === 'ArrowRight') {
+        event.preventDefault();
+        onClickStepNext();
+        return;
+      }
+
       const isUndo = event.key.toLowerCase() === 'z' && (event.metaKey || event.ctrlKey);
       if (isUndo) {
         event.preventDefault();
@@ -271,7 +389,14 @@ export const Game = () => {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [cellSelected, gameArray, history, loading]);
+  }, [cellSelected, gameArray, history, loading, walkthrough]);
+
+  const activeWalkthroughStep = walkthrough && walkthrough.currentStep > 0
+    ? walkthrough.steps[walkthrough.currentStep - 1]
+    : null;
+  const activeStepSummary = activeWalkthroughStep
+    ? `R${activeWalkthroughStep.row + 1}C${activeWalkthroughStep.col + 1} = ${activeWalkthroughStep.value}: ${activeWalkthroughStep.reason}`
+    : undefined;
 
   return (
     <>
@@ -280,6 +405,7 @@ export const Game = () => {
         <div className="innercontainer">
           <GameSection
             onClick={(indexOfArray: number) => onClickCell(indexOfArray)}
+            activeStepIndex={activeWalkthroughStep?.index ?? null}
           />
           <StatusSection
             onClickNumber={(number: string) => onClickNumber(number)}
@@ -287,11 +413,22 @@ export const Game = () => {
             onClickUndo={onClickUndo}
             onClickErase={onClickErase}
             onClickSolve={onClickSolve}
+            onClickStepSolve={onClickPythonWalkthrough}
+            onClickStepPrevious={onClickStepPrevious}
+            onClickStepNext={onClickStepNext}
             disabled={loading}
             solvers={solvers}
             selectedSolver={selectedSolver}
-            onChangeSolver={(id: string) => setSelectedSolver(id)}
+            onChangeSolver={onChangeSolver}
             solveDisabled={!solversLoaded}
+            stepDisabled={!solversLoaded}
+            stepActive={walkthrough !== null}
+            stepCurrent={walkthrough?.currentStep ?? 0}
+            stepTotal={walkthrough?.steps.length ?? 0}
+            stepSummary={activeStepSummary}
+            stepDetails={activeWalkthroughStep?.details}
+            stepPreviousDisabled={!walkthrough || walkthrough.currentStep <= 0}
+            stepNextDisabled={!walkthrough || walkthrough.currentStep >= walkthrough.steps.length}
           />
         </div>
         {
