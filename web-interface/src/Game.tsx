@@ -41,6 +41,7 @@ export const Game = () => {
     { id: 'python', name: 'Python', status: 'loading' },
     { id: 'prolog', name: 'Prolog', status: 'loading' },
     { id: 'clingo', name: 'Clingo', status: 'loading' },
+    { id: 'nn', name: 'Neural Network', status: 'loading' },
   ];
 
   let [ solvers, setSolvers ] = useState<SolverInfo[]>(defaultSolvers);
@@ -219,6 +220,18 @@ export const Game = () => {
         setCellSelected(-1);
         setWon(true);
         setStatusMessage(`Solved by ${result.solver} in ${result.time_ms.toFixed(1)}ms.`);
+        return;
+      }
+
+      // NN returns a partial solution: fill correct cells, leave wrong ones blank.
+      if (result.solver === 'nn' && result.solution !== null) {
+        setHistory([...history, gameArray.slice()]);
+        setGameArray(result.solution.split(''));
+        setCellSelected(-1);
+        const remaining = result.solution.split('').filter((c) => c === '0').length;
+        setStatusMessage(
+          `Neural Network filled ${result.stats.placements} cells correctly. ${remaining} of 81 cells remain unsolved.`
+        );
         return;
       }
 
