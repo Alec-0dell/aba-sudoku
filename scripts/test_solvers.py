@@ -11,7 +11,16 @@ from backend.app.core.solver_contract import SolverOptions, SolverResult
 from backend.app.solvers.prolog_solver import PrologSudokuSolver
 
 
-BOARDS_PER_DIFFICULTY = 100
+# Try to include Clingo solver when available
+try:
+    from backend.app.solvers.clingo_solver import ClingoSudokuSolver  # type: ignore
+    _clingo_available = True
+except Exception:
+    ClingoSudokuSolver = None  # type: ignore
+    _clingo_available = False
+
+
+BOARDS_PER_DIFFICULTY = 10
 
 
 @dataclass(frozen=True)
@@ -37,6 +46,9 @@ class BenchmarkRow:
 
 def main() -> None:
     bank = PuzzleBank()
+    # Ensure the full banks are loaded before running benchmarks so the
+    # sample/preload (5 records) doesn't affect the attempted counts.
+    bank._background_load_all()
     prolog_solver = PrologSudokuSolver()
     solvers = [
         SolverSpec(
@@ -47,6 +59,20 @@ def main() -> None:
             ),
         )
     ]
+
+    if _clingo_available and ClingoSudokuSolver is not None:
+        clingo_solver = ClingoSudokuSolver()
+        solvers.append(
+            SolverSpec(
+                name="clingo",
+                solve=lambda puzzle: clingo_solver.solve(
+                    puzzle,
+                    SolverOptions(explain=False),
+                ),
+            )
+        )
+    else:
+        print("Clingo solver not available — skipping clingo benchmarks.")
 
     rows = run_benchmarks(bank, solvers, BOARDS_PER_DIFFICULTY)
     print_table(rows)
