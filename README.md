@@ -1,4 +1,4 @@
-Currently configured for basic front-end use, including Python, Prolog, and Clingo-based solving.
+Currently configured for basic front-end use, including Python, Prolog, Clingo, and neural netowrk-based solving.
 
 To start:
 
